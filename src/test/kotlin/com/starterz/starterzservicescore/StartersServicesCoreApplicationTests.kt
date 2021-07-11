@@ -1,10 +1,10 @@
-package com.starters.startersservicescore
+package com.starterz.starterzservicescore
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
-class StartersServicesCoreApplicationTests {
+class StarterzServicesCoreApplicationTests {
 
 	@Test
 	fun contextLoads() {

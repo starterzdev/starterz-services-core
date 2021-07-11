@@ -1,11 +1,11 @@
-package com.starters.startersservicescore
+package com.starterz.starterzservicescore
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class StartersServicesCoreApplication
+class StarterzServicesCoreApplication
 
 fun main(args: Array<String>) {
-	runApplication<StartersServicesCoreApplication>(*args)
+	runApplication<StarterzServicesCoreApplication>(*args)
 }

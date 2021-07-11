@@ -1,4 +1,4 @@
-package com.starters.startersservicescore.config
+package com.starterz.starterzservicescore.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

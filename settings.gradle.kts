@@ -1,1 +1,1 @@
-rootProject.name = "starters-services-core"
+rootProject.name = "starterz-services-core"
