@@ -41,7 +41,7 @@ class JwtService(
         return Mono.fromCallable {
             val now = Instant.now()
             val duration = authJwtClaims.duration ?: Duration.parse(defaultDuration)
-            val token = JWT.create()
+            JWT.create()
                 .withKeyId(signingKeyId)
                 .withSubject(authJwtClaims.userId.toString())
                 .withIssuer(issuer)
@@ -52,7 +52,6 @@ class JwtService(
                 .withClaim("cid", authJwtClaims.connectionId)
                 .withClaim("atyp", authJwtClaims.authType.name)
                 .sign(Algorithm.ECDSA256(signingPk, signingSk))
-            token
         }
     }
 
