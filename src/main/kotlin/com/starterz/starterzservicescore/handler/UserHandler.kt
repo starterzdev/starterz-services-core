@@ -9,13 +9,13 @@ import reactor.core.publisher.Mono
 
 @Component
 class UserHandler(private val userRepository: UserRepository) {
-    fun findAllUsers(request: ServerRequest) : Mono<ServerResponse> {
+    fun findAllUsers(request: ServerRequest): Mono<ServerResponse> {
         return userRepository.findAll()
             .collectList()
             .flatMap { ServerResponse.ok().bodyValue(it) }
     }
 
-    fun findUserById(request: ServerRequest) : Mono<ServerResponse> {
+    fun findUserById(request: ServerRequest): Mono<ServerResponse> {
         return Mono.just(request.pathVariable("id"))
             .map(String::toLong)
             .flatMap(userRepository::findById)
