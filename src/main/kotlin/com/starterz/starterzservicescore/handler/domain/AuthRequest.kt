@@ -1,4 +1,4 @@
-package com.starterz.starterzservicescore.domain
+package com.starterz.starterzservicescore.handler.domain
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -7,6 +7,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class AuthRequest(
     @JsonProperty("authType")
     val authType: AuthType,
-    @JsonProperty("token")
-    val token: String,
+    @JsonProperty("oAuthToken")
+    val oAuthToken: String,
 )

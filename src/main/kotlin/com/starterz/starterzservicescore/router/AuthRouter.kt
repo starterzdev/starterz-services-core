@@ -10,5 +10,6 @@ class AuthRouter(private val authHandler: AuthHandler) {
     @Bean
     fun authRoutes() = router {
         POST("/auth", authHandler::authenticate)
+        POST("/auth/integrate", authHandler::integrate)
     }
 }

@@ -2,7 +2,7 @@ package com.starterz.starterzservicescore.service
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.starterz.starterzservicescore.service.domain.AuthJwtClaims
+import com.starterz.starterzservicescore.service.domain.OAuthProperties
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service
@@ -25,32 +25,31 @@ class JwtService(
     @Value("\${service.jwt.auth.audience}") private val audience: String,
     @Value("\${service.jwt.auth.duration}") private val defaultDuration: String,
 ) {
-    private val keyStore: KeyStore
+    private val keyStore: KeyStore = KeyStore.getInstance(keystoreType)
     private val signingPk: ECPublicKey
     private val signingSk: ECPrivateKey
 
     init {
-        keyStore = KeyStore.getInstance(keystoreType)
         val keyStoreStream = ClassPathResource(keystoreFilename).inputStream
         keyStore.load(keyStoreStream, keystorePassword.toCharArray())
         signingPk = keyStore.getCertificate(signingKeyId).publicKey as ECPublicKey
         signingSk = keyStore.getKey(signingKeyId, signingKeyPassword.toCharArray()) as ECPrivateKey
     }
 
-    fun generateAuthJwt(authJwtClaims: AuthJwtClaims): Mono<String> {
+    fun generateAuthJwt(OAuthProperties: OAuthProperties): Mono<String> {
         return Mono.fromCallable {
             val now = Instant.now()
-            val duration = authJwtClaims.duration ?: Duration.parse(defaultDuration)
+            val duration = OAuthProperties.duration ?: Duration.parse(defaultDuration)
             JWT.create()
                 .withKeyId(signingKeyId)
-                .withSubject(authJwtClaims.userId.toString())
+                .withSubject(OAuthProperties.userId.toString())
                 .withIssuer(issuer)
                 .withAudience(audience)
                 .withIssuedAt(Date.from(now))
                 .withNotBefore(Date.from(now))
                 .withExpiresAt(Date.from(now.plus(duration)))
-                .withClaim("cid", authJwtClaims.connectionId)
-                .withClaim("atyp", authJwtClaims.authType.name)
+                .withClaim("cid", OAuthProperties.connectionId)
+                .withClaim("atyp", OAuthProperties.authType.name)
                 .sign(Algorithm.ECDSA256(signingPk, signingSk))
         }
     }
