@@ -60,5 +60,6 @@ class AuthHandler(
             .flatMap(jwtService::generateAuthJwt)
             .map(::AuthResponse)
             .flatMap(ServerResponse.ok()::bodyValue)
+            .onErrorResume(UserNotFoundException::class.java) { ServerResponse.notFound().build() }
     }
 }
