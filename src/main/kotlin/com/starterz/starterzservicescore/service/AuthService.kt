@@ -1,8 +1,8 @@
 package com.starterz.starterzservicescore.service
 
-import com.starterz.starterzservicescore.service.domain.AuthJwtClaims
+import com.starterz.starterzservicescore.service.domain.OAuthProperties
 import reactor.core.publisher.Mono
 
 interface AuthService {
-    fun verify(token: String): Mono<AuthJwtClaims>
+    fun authenticate(token: String): Mono<OAuthProperties>
 }
