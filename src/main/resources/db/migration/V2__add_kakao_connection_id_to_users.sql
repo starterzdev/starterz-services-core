@@ -1,2 +1,2 @@
 ALTER TABLE users
-ADD COLUMN kakao_connection_id BIGINT;
+ADD COLUMN kakao_connection_id VARCHAR UNIQUE;

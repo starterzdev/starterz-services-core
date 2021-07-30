@@ -1,11 +1,9 @@
 package com.starterz.starterzservicescore.service.domain
 
 import com.starterz.starterzservicescore.handler.domain.AuthType
-import java.time.Duration
 
-data class OAuthProperties(
+data class VerificationPayload(
     val userId: Long,
     val authType: AuthType,
     val connectionId: String,
-    val duration: Duration?,
 )
