@@ -8,5 +8,5 @@ import reactor.core.publisher.Mono
 @Repository
 interface UserRepository : R2dbcRepository<User, Long> {
     fun findByEmail(email: String): Mono<User>
-    fun findByKakaoConnectionId(connectionId: Long): Mono<User>
+    fun findByKakaoConnectionId(connectionId: String): Mono<User>
 }

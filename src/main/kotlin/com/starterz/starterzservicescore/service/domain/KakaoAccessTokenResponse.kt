@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonInclude
 data class KakaoAccessTokenResponse(
-    @JsonProperty("id") val id: Long,
+    @JsonProperty("id") val id: String,
     @JsonProperty("expires_in") val expiresIn: Int,
     @JsonProperty("app_id") val appId: Int,
 )

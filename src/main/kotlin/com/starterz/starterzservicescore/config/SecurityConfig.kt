@@ -41,6 +41,7 @@ class SecurityConfig(
                 .pathMatchers(HttpMethod.OPTIONS).permitAll()
                 .pathMatchers("/auth/**").permitAll()
                 .pathMatchers("/actuator/**").permitAll()
+                .pathMatchers("/verification/**").permitAll()
                 .anyExchange().authenticated().and()
             .addFilterAt(jwtAuthFilter, SecurityWebFiltersOrder.HTTP_BASIC)
             .build()

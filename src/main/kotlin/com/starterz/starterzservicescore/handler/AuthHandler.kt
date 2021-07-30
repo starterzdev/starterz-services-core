@@ -8,21 +8,26 @@ import com.starterz.starterzservicescore.service.JwtService
 import com.starterz.starterzservicescore.service.KakaoAuthService
 import com.starterz.starterzservicescore.service.UserService
 import com.starterz.starterzservicescore.service.domain.KakaoAccessTokenResponse
-import com.starterz.starterzservicescore.service.domain.OAuthProperties
+import com.starterz.starterzservicescore.service.domain.VerificationPayload
+import com.starterz.starterzservicescore.service.exception.UnsupportedAuthTypeException
 import com.starterz.starterzservicescore.service.exception.UserNotFoundException
+import com.starterz.starterzservicescore.service.exception.UserUpdateFailedException
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import reactor.core.publisher.Mono
-import java.time.Duration
 
 @Component
 class AuthHandler(
     val kakaoAuthService: KakaoAuthService,
     val jwtService: JwtService,
     val userService: UserService,
+    @Value("\${server.port}") val serverPort: String,
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
     fun authenticate(request: ServerRequest): Mono<ServerResponse> {
         return request
             .bodyToMono(AuthRequest::class.java)
@@ -40,26 +45,21 @@ class AuthHandler(
     }
 
     fun integrate(request: ServerRequest): Mono<ServerResponse> {
-        val integrationRequestMono: Mono<IntegrationRequest> = request.bodyToMono(IntegrationRequest::class.java).cache()
-        val kakaoAccessTokenResponseMono: Mono<KakaoAccessTokenResponse> = integrationRequestMono
+        val integrationRequestMono = request.bodyToMono(IntegrationRequest::class.java).cache()
+        return integrationRequestMono
             .flatMap {
                 when(it.authType) {
                     AuthType.KAKAO -> kakaoAuthService.verifyWithServer(it.oAuthToken)
-                    else -> Mono.error(Throwable("Unsupported auth type: " + it.authType))
+                        .map(KakaoAccessTokenResponse::id)
+                        .zipWith(integrationRequestMono.map(IntegrationRequest::email).flatMap(userService::getUserByEmail))
+                        .map { tuple -> VerificationPayload(userId = tuple.t2.id!!, connectionId = tuple.t1, authType = it.authType) }
+                    else -> error(UnsupportedAuthTypeException("AuthType: ${it.authType.name} is not supported"))
                 }
             }
-            .cache()
-        return kakaoAccessTokenResponseMono
-            .zipWith(integrationRequestMono.map(IntegrationRequest::email))
-            .flatMap { userService.updateKakaoConnectionId(it.t2, it.t1.id) }
-            .zipWith(kakaoAccessTokenResponseMono)
-            .map {
-                val duration = Duration.ofSeconds(it.t2.expiresIn.toLong() / 2)
-                OAuthProperties(it.t1.id!!, AuthType.KAKAO, it.t1.kakaoConnectionId!!, duration)
-            }
-            .flatMap(jwtService::generateAuthJwt)
-            .map(::AuthResponse)
-            .flatMap(ServerResponse.ok()::bodyValue)
+            .flatMap(jwtService::generateVerificationJwt)
+            .doOnNext { jwt -> logger.info("Verification Link: http://localhost:$serverPort/api/v1/verification/user/$jwt") }
+            .then(ServerResponse.ok().build())
             .onErrorResume(UserNotFoundException::class.java) { ServerResponse.notFound().build() }
+            .onErrorResume(UserUpdateFailedException::class.java) { ServerResponse.unprocessableEntity().build() }
     }
 }
