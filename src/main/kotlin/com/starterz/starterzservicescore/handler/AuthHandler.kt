@@ -1,9 +1,6 @@
 package com.starterz.starterzservicescore.handler
 
-import com.starterz.starterzservicescore.handler.domain.AuthRequest
-import com.starterz.starterzservicescore.handler.domain.AuthResponse
-import com.starterz.starterzservicescore.handler.domain.AuthType
-import com.starterz.starterzservicescore.handler.domain.IntegrationRequest
+import com.starterz.starterzservicescore.handler.domain.*
 import com.starterz.starterzservicescore.service.JwtService
 import com.starterz.starterzservicescore.service.KakaoAuthService
 import com.starterz.starterzservicescore.service.UserService
@@ -41,6 +38,16 @@ class AuthHandler(
             .map(::AuthResponse)
             .flatMap(ServerResponse.ok()::bodyValue)
             .onErrorResume(UserNotFoundException::class.java) { ServerResponse.notFound().build() }
+            .onErrorResume { ServerResponse.status(HttpStatus.UNAUTHORIZED).build() }
+    }
+
+    fun checkToken(request: ServerRequest): Mono<ServerResponse> {
+        return request
+            .bodyToMono(CheckTokenRequest::class.java)
+            .map(CheckTokenRequest::token)
+            .doOnNext { logger.info("Checking Token: {}...", it) }
+            .flatMap(jwtService::verifyAuthJwt)
+            .flatMap { ServerResponse.ok().build() }
             .onErrorResume { ServerResponse.status(HttpStatus.UNAUTHORIZED).build() }
     }
 
