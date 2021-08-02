@@ -1,0 +1,5 @@
+CREATE TABLE projects(
+    id BIGSERIAL PRIMARY KEY NOT NULL,
+    name VARCHAR NOT NULL,
+    description VARCHAR NOT NULL
+)
