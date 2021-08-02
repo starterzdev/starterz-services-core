@@ -12,6 +12,7 @@ class AuthRouter(private val authHandler: AuthHandler) {
     fun authRoutes() = router {
         (accept(MediaType.APPLICATION_JSON) and "/api/v1").nest {
             POST("/auth", authHandler::authenticate)
+            POST("/auth/checkToken", authHandler::checkToken)
             POST("/auth/integrate", authHandler::integrate)
         }
     }
