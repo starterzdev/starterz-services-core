@@ -1,53 +1,71 @@
 package com.starterz.starterzservicescore.service
 
-import com.starterz.starterzservicescore.handler.domain.AuthType
+import com.starterz.starterzservicescore.client.KakaoOauthClient
+import com.starterz.starterzservicescore.client.domain.KakaoAuthResponse
+import com.starterz.starterzservicescore.client.domain.KakaoProfileResponse
+import com.starterz.starterzservicescore.client.domain.KakaoTokenInfoResponse
+import com.starterz.starterzservicescore.entity.User
+import com.starterz.starterzservicescore.entity.user.Platform
+import com.starterz.starterzservicescore.entity.user.UserOauth
+import com.starterz.starterzservicescore.repository.UserOauthRepository
 import com.starterz.starterzservicescore.repository.UserRepository
-import com.starterz.starterzservicescore.service.domain.OAuthProperties
-import com.starterz.starterzservicescore.service.domain.KakaoAccessTokenResponse
-import com.starterz.starterzservicescore.service.exception.UserNotFoundException
 import org.slf4j.LoggerFactory
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
-import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
-import java.time.Duration
+import java.time.LocalDateTime
 
 @Service
 class KakaoAuthService(
     private val userRepository: UserRepository,
-): AuthService {
-    companion object {
-        const val KAKAO_BASE_URL = "https://kapi.kakao.com/"
-        const val ACCESS_TOKEN_INFO_ENDPOINT = "v1/user/access_token_info"
-    }
+    private val userOauthRepository: UserOauthRepository,
+    private val kakaoOauthClient: KakaoOauthClient,
+) {
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val webClient = WebClient.create(KAKAO_BASE_URL)
+    private val platform: Platform = Platform.KAKAO
 
-    override fun authenticate(token: String): Mono<OAuthProperties> {
-        val kakaoAccessTokenResponseMono = verifyWithServer(token).cache()
-        return kakaoAccessTokenResponseMono
-            .map(KakaoAccessTokenResponse::id)
-            .flatMap(userRepository::findByKakaoConnectionId)
-            .switchIfEmpty(Mono.defer { Mono.error(UserNotFoundException("No User found for OAuth")) })
-            .doOnNext { logger.info("Successfully found user with Kakao connection: {}", it)}
-            .zipWith(kakaoAccessTokenResponseMono)
-            .map {
-                val duration = Duration.ofSeconds(it.t2.expiresIn.toLong() / 2)
-                OAuthProperties(it.t1.id!!, AuthType.KAKAO, it.t1.kakaoConnectionId!!, duration)
-            }
+    fun authenticate(authCode: String): Mono<User> {
+        val accessTokenMono = Mono.just(authCode)
+            .flatMap(kakaoOauthClient::authenticate)
+            .map(KakaoAuthResponse::accessToken)
+            .cache()
+        val connectionIdMono = accessTokenMono
+            .flatMap(kakaoOauthClient::getTokenInfo)
+            .map(KakaoTokenInfoResponse::id)
+            .cache()
+        return connectionIdMono
+            .flatMap { userOauthRepository.findByConnectionIdAndPlatform(it, platform) }
+            .switchIfEmpty(Mono.defer {
+                Mono.zip(accessTokenMono, connectionIdMono).flatMap { createUserWithOauth(it.t1, it.t2) }
+            })
+            .map(UserOauth::userId)
+            .flatMap(userRepository::findById)
+            .doOnNext { logger.info("User = $it") }
     }
 
-    fun verifyWithServer(token: String): Mono<KakaoAccessTokenResponse> {
-        return webClient
-            .get()
-            .uri(ACCESS_TOKEN_INFO_ENDPOINT)
-            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE + ";charset=utf-8")
-            .header(HttpHeaders.AUTHORIZATION, String.format("Bearer %s", token))
-            .retrieve()
-            .onStatus(HttpStatus::isError) { Mono.error(Throwable("Failed to verify token")) }
-            .bodyToMono(KakaoAccessTokenResponse::class.java)
-            .doOnNext { logger.info("Successfully retrieved Kakao data: {}", it)}
+    private fun createUserWithOauth(accessToken: String, connectionId: String): Mono<UserOauth> {
+        return kakaoOauthClient
+            .getProfile(accessToken)
+            .flatMap { kakaoProfileResponse ->
+                val kakaoAccount: KakaoProfileResponse.KakaoAccount = kakaoProfileResponse.kakaoAccount
+                val userMono = Mono.just(
+                    User(
+                        email = kakaoAccount.email,
+                        name = kakaoAccount.name,
+                        nickname = kakaoAccount.profile.nickname,
+                        roles = listOf(User.Role.COMMON),
+                    )
+                )
+                userMono
+                    .mapNotNull(User::id)
+                    .map { userId ->
+                        UserOauth(
+                            userId = userId!!,
+                            connectionId = connectionId,
+                            platform = platform,
+                            connectedAt = LocalDateTime.now(),
+                        )
+                    }
+                    .flatMap(userOauthRepository::save)
+            }
     }
 }

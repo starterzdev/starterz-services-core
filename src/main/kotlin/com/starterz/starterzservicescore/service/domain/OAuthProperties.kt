@@ -1,11 +1,11 @@
 package com.starterz.starterzservicescore.service.domain
 
+import com.starterz.starterzservicescore.entity.user.Platform
 import com.starterz.starterzservicescore.handler.domain.AuthType
 import java.time.Duration
 
 data class OAuthProperties(
-    val userId: Long,
-    val authType: AuthType,
-    val connectionId: String,
+    val platformUserId: Long,
+    val platform: Platform,
     val duration: Duration?,
 )

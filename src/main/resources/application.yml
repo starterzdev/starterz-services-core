@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: starterz-services-core
+management:
+  endpoints:
+    web:
+      base-path: /api/actuator
+
+---
+server:
+  port: 8090
+spring:
+  config:
+    activate:
+      on-profile: dev
+  webflux:
+    base-path: /api
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/starterz_dev
+    username: starterz_dev_admin
+    password: Admin123Admin123
+    pool:
+      #      validation-query: SELECT
+      enabled: true
+
+auth:
+  refresh-token:
+    duration: P7D
+    #    key: s9DLs2WNsrl5hBhkKXtEY8cOkF9hZCzyfwuBSofNY7U=
+  header:
+    user-id: X-Starterz-User-Id
+  claim:
+    issuer: starterz-services-auth-dev
+    audience: starterz-services-gatekeeper-dev
+    duration: PT15M
+  signing-key:
+    type: JKS
+    filename: starterz-secrets-dev.jks
+    password: Admin123Admin123
+    alias: dev-auth-jwt-signature-leaf
+  kakao:
+    api-key: 47c0c7761b1531a96b43d1703c934872
+    auth:
+      base-url: https://kauth.kakao.com
+      path:
+        request-token: /oauth/token
+    user:
+      base-url: https://kapi.kakao.com
+      path:
+        token-info: /v1/user/access_token_info
+        profile: /v2/user/me
+
+logging:
+  level:
+    io.r2dbc.postgresql.QUERY: DEBUG # for queries
+    io.r2dbc.postgresql.PARAM: DEBUG # for parameters

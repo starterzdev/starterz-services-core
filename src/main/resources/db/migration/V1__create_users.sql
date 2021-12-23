@@ -1,9 +1,0 @@
-CREATE TABLE users(
-    id BIGSERIAL PRIMARY KEY NOT NULL,
-    email VARCHAR UNIQUE NOT NULL,
-    first_name VARCHAR NOT NULL,
-    last_name VARCHAR NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL,
-    version BIGINT NOT NULL
-);
