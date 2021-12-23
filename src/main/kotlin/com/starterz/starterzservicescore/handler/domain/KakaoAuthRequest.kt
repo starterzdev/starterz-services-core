@@ -2,11 +2,10 @@ package com.starterz.starterzservicescore.handler.domain
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.starterz.starterzservicescore.entity.user.Platform
 
 @JsonInclude
-data class AuthRequest(
-    @JsonProperty("authType")
-    val authType: AuthType,
-    @JsonProperty("oAuthToken")
-    val oAuthToken: String,
+data class KakaoAuthRequest(
+    @JsonProperty("auth_code")
+    val authCode: String,
 )

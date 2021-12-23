@@ -11,9 +11,8 @@ class AuthRouter(private val authHandler: AuthHandler) {
     @Bean
     fun authRoutes() = router {
         (accept(MediaType.APPLICATION_JSON) and "/api/v1").nest {
-            POST("/auth", authHandler::authenticate)
-            POST("/auth/checkToken", authHandler::checkToken)
-            POST("/auth/integrate", authHandler::integrate)
+            POST("/auth/kakao", authHandler::withKakao)
+//            POST("/auth/refresh", authHandler::refreshToken)
         }
     }
 }
